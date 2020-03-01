@@ -40,4 +40,5 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+    DMux(in=inM[1..15], sel=inM[0], a=A, b=C);
 }
