@@ -40,5 +40,56 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
-    DMux(in=inM[1..15], sel=inM[0], a=A, b=C);
+    // C command: 0vvv vvvv vvvv vvvv
+    // A command: 111a c1c2c3c4 c5c6d1d2 d3j1j2j3
+
+    // instruction[15] = 0 -> ARegisterIn = instruction
+    // instruction[15] = 1 -> ARegisterIn = ALUOut
+    Mux16(a=instruction, b=ALUOut, sel=instruction[15], out=ARegisterIn);
+    
+    // C command or (A command and d1 = 1) -> save instruction in A register
+    And(a=instruction[5], b=instruction[15], out=load1);
+    Not(in=instruction[15], out=load2);
+    Or(a=load1, b=load2, out=ALoad);
+    ARegister(in=ARegisterIn, load=ALoad, out=AOut, out[0..14]=addressM);
+
+    // a = 0 -> ALU = f(A, D)
+    // a = 1 -> ALU = f(M, D)
+    Mux16(a=AOut, b=inM, sel=instruction[12], out=AMOut);
+
+    // C command and d2 = 1 -> save ALU output in D resgister
+    And(a=instruction[4], b=instruction[15], out=DLoad);
+    DRegister(in=ALUOut, load=DLoad, out=DOut);
+
+    ALU(x=DOut, 
+        y=AMOut, 
+        zx=instruction[11], 
+        nx=instruction[10], 
+        zy=instruction[9], 
+        ny=instruction[8], 
+        f=instruction[7], 
+        no=instruction[6], 
+        out=ALUOut,
+        out=outM, 
+        zr=zr, 
+        ng=ng);
+    
+    // A command -> PC(t) = PC(t-1) + 1
+    // C command and j1j2j3 = 000 -> PC(t-1) + 1
+    // C command and j1 = 1 and out < 0 -> PC(t) = A(t-1)
+    // C command and j2 = 1 and out = 0 -> PC(t) = A(t-1)
+    // C command and j3 = 1 and out > 0 -> PC(t) = A(t-1)
+    And(a=ng, b=instruction[2], out=JumpOut1);
+    And(a=zr, b=instruction[1], out=JumpOut2);
+    Or(a=zr, b=ng, out=temp1);
+    Not(in=temp1, out=MoreZeroBit);
+    And(a=MoreZeroBit, b=instruction[0], out=JumpOut3);
+    Or(a=JumpOut1, b=JumpOut2, out=JumpOut4);
+    Or(a=JumpOut3, b=JumpOut4, out=JumpOut5);
+    And(a=JumpOut5, b=instruction[15], out=JumpOut);
+    Not(in=JumpOut, out=IncOut);
+    PC(in=AOut, load=JumpOut, inc=IncOut, reset=reset, out[0..14]=pc);
+
+    // C command and d3 = 1 -> write M
+    And(a=instruction[3], b=instruction[15], out=writeM);
 }
