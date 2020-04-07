@@ -55,7 +55,7 @@ class Code:
 
     def jump(self, mnemonic):
         jump_dict = {
-            'null': '000',
+            None: '000',
             'JGT': '001',
             'JEQ': '010',
             'JGE': '011',

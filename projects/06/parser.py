@@ -1,8 +1,3 @@
-A_COMMAND = 0
-C_COMMAND = 1
-L_COMMAND = 2
-
-
 class Parser:
     def __init__(self, input_file):
         with open(input_file, 'r') as f:
@@ -10,10 +5,10 @@ class Parser:
 
             self.lines = []
             for line in raw_lines:
-                line = line.strip()
                 comment_index = line.find('//')
                 if comment_index != -1:
                     line = line[:comment_index]
+                line = line.strip()
                 if line == '':
                     continue
                 self.lines.append(line)
@@ -40,24 +35,24 @@ class Parser:
 
     def command_type(self):
         if self.command[0] == '@':
-            return A_COMMAND
+            return 'A_COMMAND'
         elif self.command[0] == '(':
-            return L_COMMAND
+            return 'L_COMMAND'
         else:
-            return C_COMMAND
+            return 'C_COMMAND'
     
     
     def symbol(self):
-        if self.command_type() == A_COMMAND:
+        if self.command_type() == 'A_COMMAND':
             return self.command[1:]
-        elif self.command_type() == L_COMMAND:
+        elif self.command_type() == 'L_COMMAND':
             return self.command[1:-1]
         else:
             raise ValueError('NOT A OR L COMMAND')
 
 
     def dest(self):
-        if self.command_type() != C_COMMAND:
+        if self.command_type() != 'C_COMMAND':
             raise ValueError('NOT C COMMAND')
         else:
             equal_index = self.command.find('=')
@@ -70,7 +65,7 @@ class Parser:
 
 
     def jump(self):
-        if self.command_type() != C_COMMAND:
+        if self.command_type() != 'C_COMMAND':
             raise ValueError('NOT C COMMAND')
         else:
             jump_index = self.command.find(';')
